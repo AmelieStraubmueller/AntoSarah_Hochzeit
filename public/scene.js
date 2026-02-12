@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import { RGBELoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js";
+import { GUI } from "https://unpkg.com/three@0.160.0/examples/jsm/libs/lil-gui.module.min.js";
 
 
 
@@ -17,7 +17,7 @@ const scene = new THREE.Scene();
 				scene.fog = new THREE.Fog( 0x90CDFF, -5, 250 );
 
 const rgbeLoader = new RGBELoader();
-rgbeLoader.load('/qwantani_sunset_puresky_2k.hdr', (texture) => {
+rgbeLoader.load('./qwantani_sunset_puresky_2k.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
 
   scene.background = texture;    // visible background
@@ -78,7 +78,7 @@ controls.update();
 
 	// Banana Scene
 const gltfLoader = new GLTFLoader();
-gltfLoader.load('/models/model_monkey_banana_Scene.glb', (gltf) => {
+gltfLoader.load('./models/model_monkey_banana_Scene.glb', (gltf) => {
   const bananaScene = gltf.scene;
   bananaScene.scale.set(5, 5, 5);
 
@@ -95,7 +95,7 @@ gltfLoader.load('/models/model_monkey_banana_Scene.glb', (gltf) => {
 
 	// Banana
 let mixer;
-gltfLoader.load('/models/model_monkey_banana.glb', (gltf) => {
+gltfLoader.load('./models/model_monkey_banana.glb', (gltf) => {
   const banana = gltf.scene;
   banana.scale.set(5, 5, 5);
 
