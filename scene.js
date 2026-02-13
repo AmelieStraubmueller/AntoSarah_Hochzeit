@@ -1,145 +1,237 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
-
-
-
-
-// Thanks to these generous folks for sharing free 3D models.
-// Monkey - ChaosBlend https://www.cgtrader.com/designers/chaosblend?utm_source=credit&utm_source=credit_item_page
-// Coconut tree - PANDORA-Land https://www.cgtrader.com/free-3d-models/plant/conifer/4-different-tree-coconut-palm-tree-on-beach
-// Banana - WolFsamii   https://www.cgtrader.com/free-3d-models/scanned/various/banana-a0e9f2de-0622-477c-99a7-789f20e3fede
 
 
 // SCENE
 const scene = new THREE.Scene();
-				scene.fog = new THREE.Fog( 0x90CDFF, -5, 250 );
+scene.fog = new THREE.Fog(0x90CDFF, -5, 250);
 
-const rgbeLoader = new RGBELoader();
-rgbeLoader.load('/qwantani_sunset_puresky_2k.hdr', (texture) => {
+
+// HDR ENVIRONMENT
+const hdrLoader = new HDRLoader();
+hdrLoader.load('/qwantani_sunset_puresky_2k.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
-
-  scene.background = texture;    // visible background
-  scene.environment = texture;   // lighting + reflections
+  scene.background = texture;
+  scene.environment = texture;
 });
 
 
-//LIGHTING
-const hemiLight = new THREE.HemisphereLight( 0xFFF4C5, 0x444444, 3 );
-				hemiLight.position.set( 0, 100, 0 );
-				scene.add( hemiLight );
+// LIGHTING
+const hemiLight = new THREE.HemisphereLight(0xFFF4C5, 0x444444, 3);
+hemiLight.position.set(0, 100, 0);
+scene.add(hemiLight);
 
-				const dirLight = new THREE.DirectionalLight( 0xffffff, 1);
-				dirLight.position.set( 0, 200, 100 );
-
-				dirLight.castShadow = true;
-
-				dirLight.shadow.mapSize.width = 2048;
-				dirLight.shadow.mapSize.height = 2048;
-
-				dirLight.shadow.camera.near = 1;
-				dirLight.shadow.camera.far = 300;
-				
-
-				dirLight.shadow.camera.top = 80;
-				dirLight.shadow.camera.bottom = - 80;
-				dirLight.shadow.camera.left = - 80;
-				dirLight.shadow.camera.right = 80;
-
-				dirLight.shadow.bias = -0.001;
-				scene.add( dirLight )
-
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(0, 200, 100);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.near = 1;
+dirLight.shadow.camera.far = 300;
+dirLight.shadow.camera.top = 80;
+dirLight.shadow.camera.bottom = -80;
+dirLight.shadow.camera.left = -80;
+dirLight.shadow.camera.right = 80;
+dirLight.shadow.bias = -0.001;
+scene.add(dirLight);
 
 
 // CAMERA
-const fov = 60;
-const aspect = window.innerWidth / window.innerHeight;
-const near = 0.1;
-const far = 1000;
-const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+const camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 camera.position.set(-5, 6, 40);
 
 
 // RENDERER
 const canvas = document.querySelector("#canvasThree");
-const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
-renderer.setSize( window.innerWidth, window.innerHeight);
-
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-//ORBIT CONTROL
+
+// CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-3, 10, 0);
 controls.update();
 
-// GEOMETRY 
 
-	// Banana Scene
+// LOADERS
 const gltfLoader = new GLTFLoader();
+
+// ✅ DRACO SETUP (IMPORTANT)
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+gltfLoader.setDRACOLoader(dracoLoader);
+
+
+// MIXERS
+let bananaMixer;
+let bananaSceneMixer;
+let vogelBananeMixer;
+let vogelLuftMixer;
+
+
+// SPEED VARIABLES
+let bananaSpeed = 1;
+let bananaSceneSpeed = 1;
+let vogelBananeSpeed = 1;
+let vogelLuftSpeed = 1;
+
+
+// ---------------- BANANA SCENE ----------------
 gltfLoader.load('/models/model_monkey_banana_Scene.glb', (gltf) => {
+
   const bananaScene = gltf.scene;
   bananaScene.scale.set(5, 5, 5);
 
-  bananaScene.traverse((child) => {
+  bananaScene.traverse(child => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
     }
-});
+  });
 
   scene.add(bananaScene);
 
+  bananaSceneMixer = new THREE.AnimationMixer(bananaScene);
+
+  if (gltf.animations.length > 0) {
+    bananaSceneMixer.clipAction(gltf.animations[0]).play();
+  }
 });
 
-	// Banana
-let mixer;
+
+// ---------------- BANANA ----------------
 gltfLoader.load('/models/model_monkey_banana.glb', (gltf) => {
+
+  console.log("BANANA ANIMATIONS:", gltf.animations);
+
   const banana = gltf.scene;
   banana.scale.set(5, 5, 5);
 
-  banana.traverse((child) => {
+  banana.traverse(child => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
     }
-});
+  });
+
   scene.add(banana);
 
-  mixer = new THREE.AnimationMixer(banana);
-  const clips = gltf.animations;
-  const clip = THREE.AnimationClip.findByName(clips, 'Banana_Schwanken_Y');
-  const action = mixer.clipAction(clip);
-  action.play();
+  bananaMixer = new THREE.AnimationMixer(banana);
 
+  const clip = THREE.AnimationClip.findByName(gltf.animations, 'Banana_Schwanken_Y');
+
+  if (clip) {
+    bananaMixer.clipAction(clip).play();
+  } else if (gltf.animations.length > 0) {
+    bananaMixer.clipAction(gltf.animations[0]).play();
+  }
 });
 
-	// Floor Plane (Water)
-const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 700, 700 ), 
-new THREE.MeshPhongMaterial( { color: 0x90CDFF, depthWrite: false } ) );
-mesh.rotation.x = - Math.PI / 2;
+
+// ---------------- VOGEL BANANE ----------------
+gltfLoader.load('/models/model_vogel_banane.glb', (gltf) => {
+
+  const vogelBanane = gltf.scene;
+  vogelBanane.scale.set(5, 5, 5);
+
+  vogelBanane.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  scene.add(vogelBanane);
+
+  vogelBananeMixer = new THREE.AnimationMixer(vogelBanane);
+
+  const clip = THREE.AnimationClip.findByName(gltf.animations, 'Vogel_Banane_Schwingen');
+  if (clip) {
+    vogelBananeMixer.clipAction(clip).play();
+  } else if (gltf.animations.length > 0) {
+    vogelBananeMixer.clipAction(gltf.animations[0]).play();
+  }
+});
+
+
+// ---------------- VOGEL FLIEGEN ----------------
+gltfLoader.load('/models/model_vogel_fliegen.glb', (gltf) => {
+
+  const vogelLuft = gltf.scene;
+  vogelLuft.scale.set(5, 5, 5);
+
+  vogelLuft.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  scene.add(vogelLuft);
+
+  vogelLuftMixer = new THREE.AnimationMixer(vogelLuft);
+
+  const clip = THREE.AnimationClip.findByName(gltf.animations, 'Vogel_Fliegen');
+  if (clip) {
+    vogelLuftMixer.clipAction(clip).play();
+  } else if (gltf.animations.length > 0) {
+    vogelLuftMixer.clipAction(gltf.animations[0]).play();
+  }
+});
+
+
+// FLOOR
+const mesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(700, 700),
+  new THREE.MeshPhongMaterial({ color: 0x90CDFF, depthWrite: false })
+);
+mesh.rotation.x = -Math.PI / 2;
 mesh.receiveShadow = true;
 mesh.position.y = -0.01;
-scene.add( mesh );
+scene.add(mesh);
 
 
-//GUI - ANIMATION
-const params = {
-  animationSpeed: 1  
-};
+// GUI
 const gui = new GUI();
-gui.add(params, 'animationSpeed', 0, 20).step(0.1).name('He loves to jiggle fast!');
+
+gui.add({ bananaSpeed }, 'bananaSpeed', 0, 5)
+  .step(0.1)
+  .name('Banana Speed')
+  .onChange(v => bananaSpeed = v);
+
+gui.add({ vogelBananeSpeed }, 'vogelBananeSpeed', 0, 5)
+  .step(0.1)
+  .name('Bird Banana Speed')
+  .onChange(v => vogelBananeSpeed = v);
+
+gui.add({ vogelLuftSpeed }, 'vogelLuftSpeed', 0, 5)
+  .step(0.1)
+  .name('Flying Bird Speed')
+  .onChange(v => vogelLuftSpeed = v);
 
 
-
+// ANIMATE
 const clock = new THREE.Clock();
+
 function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
-  if (mixer) mixer.update(delta * params.animationSpeed);
+
+  if (bananaMixer) bananaMixer.update(delta * bananaSpeed);
+  if (bananaSceneMixer) bananaSceneMixer.update(delta * bananaSceneSpeed);
+  if (vogelBananeMixer) vogelBananeMixer.update(delta * vogelBananeSpeed);
+  if (vogelLuftMixer) vogelLuftMixer.update(delta * vogelLuftSpeed);
 
   controls.update();
   renderer.render(scene, camera);
